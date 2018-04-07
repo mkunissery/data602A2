@@ -7,7 +7,6 @@ import json
 import urllib
 from datetime import datetime
 import requests
-from bs4 import BeautifulSoup
 import time
 import math
 import socket
@@ -234,7 +233,20 @@ def GetCashLevel():
     client = GetMongoClient()
     db = client.Crypto.Crypto
     records = db.find({"name":"cash"})
-    return str(list(records)[0]["value"])
+    if (records.count() == 0):
+        cash = [{
+            "name": "cash",
+            "value": 1000000
+        }]
+        for data in cash:
+            db.save(data)
+        records = db.find({"name": "cash"})
+        ret = list(records)[0]["value"]
+    else:
+        ret= list(records)[0]["value"]
+    return str(ret)
+
+
 
 def GetTradeLog():
     client = MongoClient('localhost', 27017)
@@ -309,7 +321,18 @@ def GetInvestableCash():
     client = GetMongoClient()
     db = client.Crypto.Crypto
     records = db.find({"name":"cash2invest"})
-    return list(records)[0]["value"]
+    if (records.count() == 0):
+        cash = [{
+            "name": "cash2invest",
+            "value": 1000000
+        }]
+        for data in cash:
+            db.save(data)
+        records = db.find({"name": "cash2invest"})
+        ret = list(records)[0]["value"]
+    else:
+        ret= list(records)[0]["value"]
+    return ret
 
 
 def UpdateCashLevel(amount):
