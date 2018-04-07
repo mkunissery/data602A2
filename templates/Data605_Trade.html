@@ -1,0 +1,8 @@
+
+ 	<select name= clist  id="manual_buy_target" class="form-control m-b-10 select2" title="" tabindex="-1">
+	<option value="-1">Select a Coin</option> 
+    {% for curr in clist %}
+    <option value= "{{curr}}" >{{ curr }}</option>
+	{% endfor %}
+	 </select>
+
