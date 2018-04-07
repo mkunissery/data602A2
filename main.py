@@ -342,17 +342,7 @@ def UpdateCashLevel(amount):
     db.findOneAndUpdate({"name": "cash"},{"$inc": {"value": str(float(rec["value"]) + amount) }})
     return True
 
-def CreateBlotterDataFrame():
-    url = 'https://raw.githubusercontent.com/mkunissery/data/master/cryptolist.csv'
-    df = pd.read_csv(url)
-    return(df)
-
-
-
-
-
 def GetPL():
-    #df = CreateBlotterDataFrame()
     df = pd.DataFrame(np.empty(0, dtype=[('Ticker','S20'),
                                          ('Position', 'f8'),
                                          ('MktPrice', 'f8'),
