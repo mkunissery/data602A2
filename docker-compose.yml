@@ -1,5 +1,6 @@
 version: "2"
-app:
+services:
+  app:
     container_name: app
     restart: always
     build: .
