@@ -300,8 +300,8 @@ def AppendTradeLog(Ticker, Qty, tType, Price, symbol):
     return NetCash
 
 def GetMongoClient():
-    host = socket.gethostbyname(socket.gethostname())
-    #host = socket.gethostbyname("")
+    #host = socket.gethostbyname(socket.gethostname())
+    host = socket.gethostbyname("")
     client = MongoClient(host, 27017)
     return(client)
 
