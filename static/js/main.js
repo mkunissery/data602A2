@@ -11,6 +11,12 @@ $(document).ready(function(){
     //Positions
     $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
         $("#OpenPositions").html(result);
+        $.ajax({url: "http://127.0.0.1:5000/Summary", success: function(result){
+            var jrarr = result.split('~')
+            $("#portfoliovalue").html("<b>" + jrarr[0] + "</b>");
+            $("#cashvalue").html("<b>" + jrarr[1] + "</b>");
+            $("#totalreturn").html("<b>" + jrarr[2] + "</b>");
+             }});
     }});
 
 
@@ -467,6 +473,14 @@ $('#placingBuyOrderButton').click(function() {
                 }});
                 $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
                     $("#OpenPositions").html(result);
+                    $.ajax({
+                        url: "http://127.0.0.1:5000/Summary", success: function (result) {
+                            var jrarr = result.split('~')
+                            $("#portfoliovalue").html("<b>" + jrarr[0] + "</b>");
+                            $("#cashvalue").html("<b>" + jrarr[1] + "</b>");
+                            $("#totalreturn").html("<b>" + jrarr[2] + "</b>");
+                        }
+                    });
                 }});
 
                 //Load Pie
@@ -509,6 +523,13 @@ $('#placingBuyOrderButton').click(function() {
                     text: $('#manual_buy_target').find(":selected").text()
                 }));
 
+                //populate message log after trade.
+                $.ajax({
+                    url: "http://127.0.0.1:5000/Getmessagelog", success: function (result) {
+                        $("#messagelog").html(result);
+                    }
+                });
+
             }
 
         }});
@@ -548,7 +569,8 @@ $('#placingsellOrderButton').click(function() {
     }
 
 
-    $.ajax({url: "http://127.0.0.1:5000/PlaceTrade/?ticker=" + jcoinsym + "&qty=" + qty +"&symbol=" + jcoinsym +"&ttype=S", success: function(result){
+    $.ajax({
+        url: "http://127.0.0.1:5000/PlaceTrade/?ticker=" + jcoinname + "&qty=" + qty + "&symbol=" + jcoinsym + "&ttype=S", success: function (result) {
 
         alert("Trade Sucessfully executed at price:" + result)
         $.ajax({url: "http://127.0.0.1:5000/Tradelog", success: function(result){
@@ -556,14 +578,73 @@ $('#placingsellOrderButton').click(function() {
         }});
         $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
             $("#OpenPositions").html(result);
-        }});
+            $.ajax({
+                url: "http://127.0.0.1:5000/Summary", success: function (result) {
+                    var jrarr = result.split('~')
+                    $("#portfoliovalue").html("<b>" + jrarr[0] + "</b>");
+                    $("#cashvalue").html("<b>" + jrarr[1] + "</b>");
+                    $("#totalreturn").html("<b>" + jrarr[2] + "</b>");
+                }
+            });
+        }
+        });
+
+        $.ajax({
+            url: "http://127.0.0.1:5000/Getcash", success: function (result) {
+                $("#cashpos").text("Cash :$" + result);
+            }
+        });
+
+        //Load Pie
+        $.ajax({
+            url: "http://127.0.0.1:5000/Getpie", success: function (jdata) {
+                Highcharts.chart('piechart', {
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false,
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'Investment Allocation by % Total'
+                    },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                                style: {
+                                    color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                        name: 'Position %',
+                        data: JSON.parse(jdata),
+                        colorByPoint: true
+                    }]
+                });
+            }
+        });
+
+        //populate message log after trade.
+        $.ajax({
+            url: "http://127.0.0.1:5000/Getmessagelog", success: function (result) {
+                $("#messagelog").html(result);
+            }
+        });
+
+        //update
 
     }});
 
-    $.ajax({url: "http://127.0.0.1:5000/Getcash", success: function(result){
-        $("#cashpos").text("Cash :$"+result);
-    }});
-
+   
 
 
 });
@@ -628,11 +709,5 @@ function precisionRound(number, precision) {
     var factor = Math.pow(10, precision);
     return Math.round(number * factor) / factor;
 }
-
-
-
-
-
-
 
 
