@@ -249,7 +249,7 @@ def GetCashLevel():
 
 
 def GetTradeLog():
-    client = MongoClient('localhost', 27017)
+    client = GetMongoClient()
     db = client.Crypto.Tradelog
     records = db.find()
     if records.count() > 0:
@@ -313,8 +313,8 @@ def AppendTradeLog(Ticker, Qty, tType, Price, symbol):
 
 def GetMongoClient():
     #host = socket.gethostbyname(socket.gethostname())
-    host = socket.gethostbyname("")
-    client = MongoClient(host, 27017)
+    #host = socket.gethostbyname("")
+    client = MongoClient('localhost', 27017)
     return(client)
 
 def GetInvestableCash():
