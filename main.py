@@ -3,13 +3,13 @@ from flask import request
 from pymongo import MongoClient
 import pandas as pd
 import numpy as np
+import json
 import urllib
 from datetime import datetime
 import requests
 import time
 import math
 import socket
-import json
 
 
 app = Flask(__name__)
@@ -52,7 +52,6 @@ def GetOpenPositions():
         return render_template('Data605_NoPositions.html')
 
 
-
 @app.route('/Summary')
 def GetSummary():
     dfpos = GetPL()
@@ -60,6 +59,7 @@ def GetSummary():
     cashvalue = float(GetCashLevel())
     totreturn = ((totportvalue + cashvalue)/ float(GetInvestableCash()) - 1)*100
     return ('${:20,.2f}'.format(totportvalue) + "~" + '${:20,.2f}'.format(cashvalue) + "~" + '{:20,.2f}%'.format(totreturn)).replace(' ','')
+
 
 
 @app.route('/Getmultiseries/<symbol>')
@@ -128,23 +128,6 @@ def GetHistoricalDataFromCache(symbol=None):
             db.save(cache)
     return retval
 
-
-
-
-@app.route('/Gethistoricaldata_NoCache/<symbol>')
-def GetHistoricalDataFromCryptoCompare(symbol=None):
-    namevalue = []
-    struri = "https://min-api.cryptocompare.com/data/histoday?fsym=" + symbol + "&tsym=USD&limit=100" #&aggregate=3&e=CCCAGG
-    response = requests.get(struri)
-    clist = response.json()['Data']
-    df = pd.DataFrame(clist)
-    dfnew = df[['time','close']]
-    for index,  row in dfnew.iterrows():
-        hdate = datetime.fromtimestamp(int(row['time'])).strftime('%m/%d/%Y')
-        hts =  int(time.mktime(datetime.strptime(hdate,'%m/%d/%Y').timetuple()))*1000
-        namevalue.append("[" + str(hts) + "," + str(row['close']) + "]")
-    retval = "[" +  ",".join(namevalue) + "]"
-    return retval
 
 @app.route('/GetPrice/<coinname>')
 def GetPrice(coinname=None):
@@ -321,7 +304,8 @@ def AppendTradeLog(Ticker, Qty, tType, Price, symbol):
 def GetMongoClient():
     #host = socket.gethostbyname(socket.gethostname())
     #host = socket.gethostbyname("")
-    client = MongoClient('localhost', 27017)
+    #client = MongoClient(host, 27017)
+    client = MongoClient('mongodb://mongo:27017')
     return(client)
 
 def GetInvestableCash():
@@ -434,8 +418,6 @@ def GetPL():
     return dfnew
 
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False,host='0.0.0.0')
     #app.run(debug=True,threaded=True)
-    # app.run(debug=True,threaded=True)
