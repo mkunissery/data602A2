@@ -313,8 +313,8 @@ def AppendTradeLog(Ticker, Qty, tType, Price, symbol):
 
 def GetMongoClient():
     #host = socket.gethostbyname(socket.gethostname())
-    #host = socket.gethostbyname("")
-    client = MongoClient('localhost', 27017)
+    host = socket.gethostbyname("")
+    client = MongoClient(host, 27017)
     return(client)
 
 def GetInvestableCash():
