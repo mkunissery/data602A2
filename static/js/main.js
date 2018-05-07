@@ -727,7 +727,11 @@ function PlotNewCharts(charttype, title, symbol)
 
     $.ajax({url:  sUri, success: function (data) {
         // Create the chart
-
+        if(data == "") 
+        {
+            alert("No data to plot.")
+            return false
+        }
         Highcharts.stockChart('Chartmult', {
 
             xAxis: {
