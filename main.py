@@ -31,8 +31,10 @@ def getopt():
 @app.route('/Active')
 def GetActiveStocks():
     dflog = GetTradeLog()
-    dfPos = dflog.groupby(["Ticker",'Symbol']).apply(lambda x: np.sum(x.Qty*x.mult*-1)).reset_index()
-    lstCrypto = (( dfPos["Ticker"].str.replace('-',' ') + " (" + dfPos["Symbol"] + ")").loc[dfPos[0] > 0]).tolist()
+    lstCrypto = []
+    if len(dflog) > 0:
+        dfPos = dflog.groupby(["Ticker",'Symbol']).apply(lambda x: np.sum(x.Qty*x.mult*-1)).reset_index()
+        lstCrypto = (( dfPos["Ticker"].str.replace('-',' ') + " (" + dfPos["Symbol"] + ")").loc[dfPos[0] > 0]).tolist()
     return render_template('Data605_SellList.html', clist=lstCrypto)
 
 @app.route('/Shares/<symbol>')
