@@ -13,13 +13,9 @@ from flask import Flask, render_template
 from flask import request
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-from scipy.interpolate import *
 from statsmodels.tsa.stattools import acf, pacf
 from statsmodels.tsa.arima_model import ARIMA
 from bson.json_util import dumps
-import cvxopt as opt
-from cvxopt import blas, solvers
-from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 
@@ -473,9 +469,8 @@ def AppendTradeLog(Ticker, Qty, tType, Price, symbol):
     return NetCash
 
 def GetMongoClient():
-    #host = socket.gethostbyname(socket.gethostname())
-    #host = socket.gethostbyname("")
-    client = MongoClient('localhost', 27017)
+    #client = MongoClient('localhost', 27017)    #use this for local settings
+    client = MongoClient('mongodb://mongo:27017')  #use this in a docker setting
     return(client)
 
 def GetInvestableCash():
@@ -631,7 +626,7 @@ def GetHistoricalPL(isToday):
                         df.loc[df['Ticker'] == row['Ticker'], 'UPL'] = upl
                         df.loc[df['Ticker'] == row['Ticker'], 'Value'] = position * float(bidprice)
 
-                    sumofsharessold = dflog[(dflog.Type == 'S') & (dflog.Ticker == row['Ticker'])]["Qty"].sum()
+                    sumofsharessold = dflog[(dflog.Type == 'S') & (dflog.Symbol == row['Ticker'])]["Qty"].sum()
                     if (sumofsharessold > 0):
                         position = float(df.loc[df['Ticker'] == row['Ticker'], 'Position'])
                         swap = 0
@@ -831,7 +826,7 @@ def GetPL():
                 else:
                     df.loc[df['Ticker'] == row['Ticker'], 'PerByShare'] = 0
 
-            sumofsharessold = dflog[(dflog.Type == 'S') & (dflog.Ticker==row['Ticker'])]["Qty"].sum()
+            sumofsharessold = dflog[(dflog.Type == 'S') & (dflog.Symbol==row['Ticker'])]["Qty"].sum()
             if (sumofsharessold > 0):
                 position = float(df.loc[df['Ticker'] == row['Ticker'], 'Position'])
                 swap = 0
@@ -854,4 +849,5 @@ def GetPL():
 
 
 if __name__ == "__main__":
-    app.run(debug=False,host='0.0.0.0')
+    #app.run(debug=True)
+    app.run(debug=False, host='0.0.0.0')
