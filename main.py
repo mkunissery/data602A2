@@ -26,7 +26,7 @@ def index():
 
 @app.route('/opt')
 def getopt():
-    return render_template('Data605_optimization.html')
+    return render_template('Data605_Optimization.html')
 
 @app.route('/Active')
 def GetActiveStocks():
