@@ -10,7 +10,8 @@ $(document).ready(function(){
 
     //Positions
     $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
-        $("#OpenPositions").html(result);
+        var data = result.replace(/&lt;/g,"<").replace(/&gt;/g,">")
+        $("#OpenPositions").html(data);
         $.ajax({url: "http://127.0.0.1:5000/Summary", success: function(result){
             var jrarr = result.split('~')
             $("#portfoliovalue").html("<b>" + jrarr[0] + "</b>");
@@ -472,7 +473,8 @@ $('#placingBuyOrderButton').click(function() {
                     $("#tradelog").html(result);
                 }});
                 $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
-                    $("#OpenPositions").html(result);
+                    var posdata = result.replace(/&lt;/g,"<").replace(/&gt;/g,">")
+                    $("#OpenPositions").html(posdata);
                     $.ajax({
                         url: "http://127.0.0.1:5000/Summary", success: function (result) {
                             var jrarr = result.split('~')
@@ -577,7 +579,8 @@ $('#placingsellOrderButton').click(function() {
             $("#tradelog").html(result);
         }});
         $.ajax({url: "http://127.0.0.1:5000/Positions", success: function(result){
-            $("#OpenPositions").html(result);
+            var posdata = result.replace(/&lt;/g,"<").replace(/&gt;/g,">")
+            $("#OpenPositions").html(posdata);
             $.ajax({
                 url: "http://127.0.0.1:5000/Summary", success: function (result) {
                     var jrarr = result.split('~')
@@ -710,4 +713,55 @@ function precisionRound(number, precision) {
     return Math.round(number * factor) / factor;
 }
 
+function ChartIt(symbol)
+{
+    PlotNewCharts("WAP", "Historical VWAP of " + symbol, symbol)
+}
 
+function PlotNewCharts(charttype, title, symbol)
+{
+    var addtouri = ""
+    if(symbol != "")
+        addtouri = "&coin=" + symbol 
+    var sUri = "http://127.0.0.1:5000/hpl1/?measure=" +charttype + addtouri
+
+    $.ajax({url:  sUri, success: function (data) {
+        // Create the chart
+
+        Highcharts.stockChart('Chartmult', {
+
+            xAxis: {
+                type: 'datetime',
+                labels: {
+                    formatter: function() {
+                        return Highcharts.dateFormat('%m/%d/%y', this.value);
+                    }
+                }
+            },
+
+            rangeSelector : {
+                inputEnabled:false
+            },
+
+            title: {
+                text: title
+            },
+
+            width:250,
+
+            tooltip: {
+                pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+                valueDecimals: 2,
+                split: true
+            },
+
+            series: [
+                {
+                    color:'rgb(191, 63, 63)',
+                    name: charttype,
+                    data: JSON.parse(data)
+                }
+            ]
+        });
+    }});
+}
