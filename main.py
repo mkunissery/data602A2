@@ -766,10 +766,10 @@ def GetPL():
                                ))
     dflog = GetTradeLog()
     cash2invest = GetInvestableCash()
-    maxoptresult = GetOptimizedPortfolioAllocation("max")
-    minoptresult = GetOptimizedPortfolioAllocation("min")
-    if len(dflog) > 0:
 
+    if len(dflog) > 0:
+        maxoptresult = GetOptimizedPortfolioAllocation("max")
+        minoptresult = GetOptimizedPortfolioAllocation("min")
         tickerlist = dflog['Symbol'].unique().tolist()
         coins = ','.join(tickerlist)
         pricelist = GetCurrentMultiPrice(coins)
