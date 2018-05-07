@@ -85,62 +85,70 @@ def GetSummary():
 
 @app.route('/hpl1/', methods=['GET'])
 def GetHistoricData():
-    measure = request.args.get('measure')
-    symbol = request.args.get('coin')
-    client = GetMongoClient()
-    db = client.Crypto.Datacache
-    lookup =  "HPL_" + datetime.now().strftime("%Y%m%d")
-    records = db.find({"symbol": lookup})
-    if (records.count() > 0):
-        recjson = dumps(records)
-        bjson = json.loads(recjson)
+    dflog = GetTradeLog()
+    if len(dflog) > 0:
+        measure = request.args.get('measure')
+        symbol = request.args.get('coin')
+        client = GetMongoClient()
+        db = client.Crypto.Datacache
+        lookup =  "HPL_" + datetime.now().strftime("%Y%m%d")
+        records = db.find({"symbol": lookup})
+        if (records.count() > 0):
+            recjson = dumps(records)
+            bjson = json.loads(recjson)
 
-        dfret = pd.read_json(bjson[0]['data'])
-        dfret.columns = ['CashPos', 'Date','MktPrice','Position','RPL','Ticker','TotalPL','UPL','Value','WAP']
-        dfret["Date"] = pd.to_datetime(dfret["Date"])
-        dfret["Position"] = pd.to_numeric(dfret["Position"])
-        dfret["TotalPL"] = pd.to_numeric(dfret["TotalPL"])
-        dfret["UPL"] = pd.to_numeric(dfret["UPL"])
-        dfret["Value"] = pd.to_numeric(dfret["Value"])
-        dfret["WAP"] = pd.to_numeric(dfret["WAP"])
-        dfret["CashPos"] = pd.to_numeric(dfret["CashPos"])
-        dfret["RPL"] = pd.to_numeric(dfret["RPL"])
-        dfretToday = GetHistoricalPL(True)
-        frames = [dfret, dfretToday]
-        dfret = pd.concat(frames)
+            dfret = pd.read_json(bjson[0]['data'])
+            dfret.columns = ['CashPos', 'Date','MktPrice','Position','RPL','Ticker','TotalPL','UPL','Value','WAP']
+            dfret["Date"] = pd.to_datetime(dfret["Date"])
+            dfret["Position"] = pd.to_numeric(dfret["Position"])
+            dfret["TotalPL"] = pd.to_numeric(dfret["TotalPL"])
+            dfret["UPL"] = pd.to_numeric(dfret["UPL"])
+            dfret["Value"] = pd.to_numeric(dfret["Value"])
+            dfret["WAP"] = pd.to_numeric(dfret["WAP"])
+            dfret["CashPos"] = pd.to_numeric(dfret["CashPos"])
+            dfret["RPL"] = pd.to_numeric(dfret["RPL"])
+            dfretToday = GetHistoricalPL(True)
+            frames = [dfret, dfretToday]
+            dfret = pd.concat(frames)
+        else:
+            dfret = GetHistoricalPL(False)
+            if len(dfret) > 0:
+                caches = [
+                    {
+                        "symbol": lookup,
+                        "data": dfret.to_json()
+                    }
+                ]
+                for cache in caches:
+                    db.save(cache)
+                #get today.
+            dfretToday = GetHistoricalPL(True)
+            if len(dfret) > 0:
+                frames = [dfret, dfretToday]
+            else:
+                frames = [dfretToday]
+            dfret = pd.concat(frames)
+
+        if measure != None:
+            if measure == "TotalPL":
+                dfwap = dfret[dfret.Ticker != "CASH"].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
+            elif measure == "CashPos":
+                dfwap = dfret[dfret.Ticker == "CASH"].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
+            elif measure == "WAP":
+                dfwap = dfret[dfret.Ticker == symbol].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
+
+        dfhist = pd.Series.to_frame(dfwap)
+        dfhist.columns = [measure]
+        series1 = []
+
+        for cdate in dfhist.index:
+            hdate = cdate.strftime('%m/%d/%Y')
+            hts = int(time.mktime(datetime.strptime(hdate, '%m/%d/%Y').timetuple())) * 1000
+            series1.append("[" + str(hts) + "," + str(dfhist.loc[hdate][measure][0]) + "]")
+
+        histdata = "[" + ",".join(series1) + "]"
     else:
-        dfret = GetHistoricalPL(False)
-        caches = [
-            {
-                "symbol": lookup,
-                "data": dfret.to_json()
-            }
-        ]
-        for cache in caches:
-            db.save(cache)
-        #get today.
-        dfretToday = GetHistoricalPL(True)
-        frames = [dfret, dfretToday]
-        dfret = pd.concat(frames)
-
-    if measure != None:
-        if measure == "TotalPL":
-            dfwap = dfret[dfret.Ticker != "CASH"].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
-        elif measure == "CashPos":
-            dfwap = dfret[dfret.Ticker == "CASH"].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
-        elif measure == "WAP":
-            dfwap = dfret[dfret.Ticker == symbol].groupby(["Date"]).apply(lambda x: np.sum(x[measure]))
-
-    dfhist = pd.Series.to_frame(dfwap)
-    dfhist.columns = [measure]
-    series1 = []
-
-    for cdate in dfhist.index:
-        hdate = cdate.strftime('%m/%d/%Y')
-        hts = int(time.mktime(datetime.strptime(hdate, '%m/%d/%Y').timetuple())) * 1000
-        series1.append("[" + str(hts) + "," + str(dfhist.loc[hdate][measure][0]) + "]")
-
-    histdata = "[" + ",".join(series1) + "]"
+        histdata=""
     return histdata
 
 
@@ -662,8 +670,9 @@ def GetHistoricalPL(isToday):
     else:
         dfnew = pd.DataFrame()
 
-    dftsPL = dfnew.groupby(["Date"]).apply(lambda x: np.sum(x.TotalPL)).to_frame()
-    dftscash = dflog.groupby(["Time"]).apply(lambda x: 1000000 - np.sum(x.Price*x.Qty)).to_frame()
+    if len(dfnew) > 0:
+        dftsPL = dfnew.groupby(["Date"]).apply(lambda x: np.sum(x.TotalPL)).to_frame()
+        dftscash = dflog.groupby(["Time"]).apply(lambda x: 1000000 - np.sum(x.Price*x.Qty)).to_frame()
     return dfnew
 
 # Begin Scipi Optimization Algorithm
